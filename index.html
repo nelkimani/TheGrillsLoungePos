@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-device="desktop" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Grills Lounge POS</title>
+    <script>
+      // Runs before the first paint (no dark/light flash). It is the ONE place that decides which
+      // device this is; src/supabase.ts reads the result from <html data-terminal>.
+      // Order of precedence: ?t=T2 in the address (then remembered) > remembered value > VITE_TERMINAL_CODE > OFFICE.
+      (function () {
+        var d = document.documentElement, ok = ["OFFICE", "T1", "T2", "T3"];
+        var code = "%VITE_TERMINAL_CODE%";
+        if (!code || code.indexOf("%") >= 0) code = "OFFICE";
+        try {
+          var u = new URL(location.href), q = (u.searchParams.get("t") || "").toUpperCase();
+          if (ok.indexOf(q) >= 0) {
+            localStorage.setItem("pos-terminal", q);
+            u.searchParams.delete("t");
+            history.replaceState(null, "", u.pathname + u.search + u.hash);   // keep the address tidy
+          }
+          var saved = localStorage.getItem("pos-terminal");
+          if (ok.indexOf(saved) >= 0) code = saved;
+        } catch (e) {}
+        var terminal = code !== "OFFICE";
+        var theme = null;
+        try { theme = localStorage.getItem("pos-theme"); } catch (e) {}
+        if (theme !== "light" && theme !== "dark") {
+          var osLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+          theme = terminal ? "dark" : osLight ? "light" : "dark";
+        }
+        d.setAttribute("data-terminal", code);
+        d.setAttribute("data-device", terminal ? "terminal" : "desktop");
+        d.setAttribute("data-theme", theme);
+        // Touch terminals lock zoom; the office computer and the accountant's laptop may zoom.
+        if (!terminal) {
+          var m = document.querySelector('meta[name="viewport"]');
+          if (m) m.setAttribute("content", "width=device-width, initial-scale=1");
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-900 text-slate-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

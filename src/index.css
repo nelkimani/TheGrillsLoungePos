@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ *
+ * 1. THEME COLOURS  (html[data-theme="dark" | "light"])
+ *    Values are "R G B". Dark = Tailwind's normal palette.
+ *    Light flips the grey scale (slate-900 = page, slate-800 = cards,
+ *    slate-100 = main text) and turns solid status colours into soft tints
+ *    with dark text, so nothing needs rewriting in the screens.
+ * ------------------------------------------------------------------ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --slate-50: 248 250 252; --slate-100: 241 245 249; --slate-200: 226 232 240; --slate-300: 203 213 225;
+  --slate-400: 148 163 184; --slate-500: 100 116 139; --slate-600: 71 85 105; --slate-700: 51 65 85;
+  --slate-800: 30 41 59;   --slate-900: 15 23 42;    --slate-950: 2 6 23;
+  --amber-200: 253 230 138; --amber-300: 252 211 77; --amber-400: 251 191 36; --amber-500: 245 158 11;
+  --amber-600: 217 119 6;   --amber-950: 69 26 3;
+  --red-300: 252 165 165; --red-400: 248 113 113; --red-500: 239 68 68; --red-600: 220 38 38;
+  --red-700: 185 28 28;   --red-800: 153 27 27;   --red-950: 69 10 10;
+  --green-400: 74 222 128; --green-600: 22 163 74; --green-700: 21 128 61; --green-800: 22 101 52;
+  --on-accent: 15 23 42;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+  --slate-50: 2 6 23;      --slate-100: 15 23 42;   --slate-200: 30 41 59;   --slate-300: 51 65 85;
+  --slate-400: 71 85 105;  --slate-500: 125 139 160; --slate-600: 203 213 225; --slate-700: 223 230 238;
+  --slate-800: 255 255 255; --slate-900: 238 242 247; --slate-950: 255 255 255;
+  --amber-200: 120 53 15;  --amber-300: 146 64 14;  --amber-400: 161 76 8;   --amber-500: 245 158 11;
+  --amber-600: 217 119 6;  --amber-950: 254 243 199;
+  --red-300: 153 27 27;    --red-400: 185 28 28;    --red-500: 239 68 68;    --red-600: 220 38 38;
+  --red-700: 252 165 165;  --red-800: 254 202 202;  --red-950: 254 226 226;
+  --green-400: 21 128 61;  --green-600: 22 163 74;  --green-700: 134 239 172; --green-800: 187 247 208;
+  --on-accent: 15 23 42;
+}
+/* Cards read as raised paper in the light theme (dark theme needs no outline). */
+html[data-theme="light"] .bg-slate-800 { box-shadow: 0 1px 2px rgb(15 23 42 / 0.10), 0 0 0 1px rgb(15 23 42 / 0.06); }
+
+/* ------------------------------------------------------------------ *
+ * 2. SIZE TOKENS  (html[data-device="terminal" | "desktop"])
+ *    terminal = the 15" touch monitors (touch only, no keyboard): big targets.
+ *    desktop  = 17" office computer + accountant laptop (mouse + keyboard): denser.
+ *    Everything is in rem, and the root font size scales smoothly from
+ *    1024x768 up to 1920x1080, so layouts never depend on one screen size.
+ * ------------------------------------------------------------------ */
+html[data-device="desktop"] {
+  --fs-root: clamp(15px, calc(5px + 0.9vw), 17px);
+  --btn-h: 2.75rem;      /* standard button          (>= 41px at 15px root) */
+  --topbar-h: 3.5rem;
+  --tile-min: 9rem;      /* product tile min width   */
+  --tile-h: 5.5rem;
+  --table-min: 10rem;
+  --table-h: 6rem;
+  --queue-min: 20rem;
+}
+html[data-device="terminal"] {
+  --fs-root: clamp(16px, calc(11px + 0.5vw), 20px);
+  --btn-h: 4rem;         /* 64px at 1024 wide, 80px at 1920 - always above the 56px touch minimum */
+  --topbar-h: 4rem;
+  --tile-min: 9.5rem;
+  --tile-h: 6rem;
+  --table-min: 10.5rem;
+  --table-h: 6.5rem;
+  --queue-min: 20rem;
+}
+/* A touch-screen laptop used as a desktop still gets finger-sized controls. */
+@media (pointer: coarse) {
+  html[data-device="desktop"] { --btn-h: 3.5rem; --topbar-h: 4rem; --tile-h: 6rem; --table-h: 6.5rem; }
+}
+
+html { font-size: var(--fs-root); }
+html, body, #root { height: 100%; }
+button { touch-action: manipulation; }
+body { -webkit-tap-highlight-color: transparent; }
+/* Terminals are touch only: no accidental text selection or long-press menus on buttons. */
+html[data-device="terminal"] body { user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+html[data-device="terminal"] input, html[data-device="terminal"] textarea { user-select: text; -webkit-user-select: text; }
+
+/* Visible keyboard focus (office / laptop). Touch never triggers :focus-visible on buttons. */
+:focus-visible { outline: 3px solid rgb(var(--amber-500)); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. ADAPTIVE LAYOUTS (replace the old fixed 4-column / 180+380px grids)
+ * ------------------------------------------------------------------ */
+@layer components {
+  /* Full height under the top bar. 100vh first, 100dvh where supported. */
+  .fill-screen { height: calc(100vh - var(--topbar-h)); height: calc(100dvh - var(--topbar-h)); }
+
+  /* Order screen: categories | products | cart. Cart gets ~30% but stays between 17 and 24rem. */
+  .order-layout {
+    display: grid; gap: 0.75rem; padding: 0.75rem;
+    grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) clamp(17rem, 30vw, 24rem);
+    /* One row exactly as tall as the screen: the product list and the cart scroll inside it,
+       so the page itself never scrolls and SEND ORDER is always on screen. */
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .grid-products, .grid-tables, .grid-queue { display: grid; gap: 0.75rem; }
+  .grid-products { grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr)); grid-auto-rows: var(--tile-h); align-content: start; }
+  .grid-tables   { grid-template-columns: repeat(auto-fill, minmax(var(--table-min), 1fr)); grid-auto-rows: var(--table-h); }
+  .grid-queue    { grid-template-columns: repeat(auto-fill, minmax(var(--queue-min), 1fr)); gap: 1rem; align-items: start; }
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. PRINT - 58mm thermal slip. Always black on white, whatever the theme.
+ *    Printing shows only the slip and never calls the server.
+ * ------------------------------------------------------------------ */
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  body * { visibility: hidden; }
+  #receipt, #receipt * { visibility: visible; }
+  #receipt { position: absolute; left: 0; top: 0; width: 58mm; box-shadow: none !important; }
+  @page { size: 58mm auto; margin: 2mm; }
+}
